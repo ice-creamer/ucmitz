@@ -1,0 +1,178 @@
+version: '3.7'
+
+# volumes:
+#  db-volume: # windowsの場合はコメントを外す
+volumes:
+  mysql-volume:
+  mysql-initdb:
+  webroot-volume:
+  phpmyadmin-sessions:
+  postgres-volume:
+  postgres-initdb:
+  pgadmin-volume:
+
+services:
+  bc5-db:
+    # platform: linux/x86_64 # M1チップの場合はコメントを外す
+    container_name: bc5-db
+    image: mysql:8.0.28
+    volumes:
+      - mysql-volume:/var/lib/mysql
+      # - db-volume:/var/lib/mysql # windowsの場合はコメントを外し、上の行をコメントアウトする
+      - mysql-initdb:/docker-entrypoint-initdb.d
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "basercms"
+    command: mysqld --character-set-server=utf8 --collation-server=utf8_general_ci --innodb-use-native-aio=0 --sql-mode=NO_ENGINE_SUBSTITUTION --default_authentication_plugin=mysql_native_password
+
+  bc5-php:
+    container_name: bc5-php
+    image: baserproject/basercms:php8.1
+    volumes:
+      - webroot-volume:/var/www/shared:delegated
+    environment:
+      PHP_IDE_CONFIG: "serverName=localhost"
+      COMPOSER_ALLOW_SUPERUSER: 1
+    ports:
+      - "80:80"
+#      - "443:443"
+    depends_on:
+      - bc5-db
+#    command: bash -c "/var/www/shared/docker/init.sh && apache2-foreground"
+    command: bash -c "apache2-foreground"
+
+  bc5-smtp:
+    container_name: bc5-smtp
+#    image: schickling/mailcatcher
+    image: sj26/mailcatcher
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+
+  bc5-pma:
+    container_name: bc5-pma
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOST=bc5-db
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    links:
+      - bc5-db
+    ports:
+     - 8080:80
+    volumes:
+       - phpmyadmin-sessions:/sessions
+
+  bc5-pg:
+    image: postgres:10.5
+    container_name: bc5-pg
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-volume:/var/lib/postgres
+      - postgres-initdb:/docker-entrypoint-initdb.d
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    restart: always
+    user: root
+
+  bc5-pga:
+    image: dpage/pgadmin4:3.3
+    container_name: bc5-pga
+    ports:
+      - 10080:80
+    volumes:
+      - pgadmin-volume:/var/lib/pgadmin/storage
+    environment:
+      PGADMIN_DEFAULT_EMAIL: root
+      PGADMIN_DEFAULT_PASSWORD: root
+    restart: always
+
+x-mutagen:
+  sync:
+    defaults:
+      ignore:
+        vcs: true # バージョン管理対象外(exclude version control)
+        paths:
+          - ".DS_Store"
+          - "*.py[cod]"
+          - "__pycache__/"
+          - "*.egg-info/"
+          - "*~"
+          - "*.sw[a-p]"
+      mode: "two-way-resolved" # 同期モード指定（ホスト　↔　コンテナ　双方を同期）
+    mysql-volume:
+      alpha: "./volumes/mysql" # プロジェクトのパス
+      beta: "volume://mysql-volume" # volumeの指定
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+
+    mysql-initdb:
+      alpha: "./mysql/docker-entrypoint-initdb.d"
+      beta: "volume://mysql-initdb"
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+
+    webroot-volume:
+      alpha: "../"
+      beta: "volume://webroot-volume"
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+
+    phpmyadmin-sessions:
+      alpha: "./phpmyadmin/sessions"
+      beta: "volume://phpmyadmin-sessions"
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+
+    postgres-volume:
+      alpha: "./volumes/postgres"
+      beta: "volume://postgres-volume"
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+
+    postgres-initdb:
+      alpha: "./postgres/docker-entrypoint-initdb.d"
+      beta: "volume://postgres-initdb"
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+
+    pgadmin-volume:
+      alpha: "./pgadmin"
+      beta: "volume://pgadmin-volume"
+      ignore:
+        paths:
+      configurationBeta:
+        permissions:
+          defaultFileMode: 0644
+          defaultDirectoryMode: 0755
+

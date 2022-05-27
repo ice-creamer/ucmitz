@@ -13,9 +13,11 @@ volumes:
 
 services:
   bc5-db:
-    # platform: linux/x86_64 # M1チップの場合はコメントを外す
+#    platform: linux/x86_64 # M1チップの場合はコメントを外す
     container_name: bc5-db
-    image: mysql:8.0.28
+#    image: mysql:8.0.28
+# マルチプラットフォーム対応イメージの指定
+    image: mysql:8.0-oracle
     volumes:
       - mysql-volume:/var/lib/mysql
       # - db-volume:/var/lib/mysql # windowsの場合はコメントを外し、上の行をコメントアウトする
@@ -31,7 +33,7 @@ services:
     container_name: bc5-php
     image: baserproject/basercms:php8.1
     volumes:
-      - webroot-volume:/var/www/shared:delegated
+      - webroot-volume:/var/www/html:delegated
     environment:
       PHP_IDE_CONFIG: "serverName=localhost"
       COMPOSER_ALLOW_SUPERUSER: 1
@@ -40,23 +42,35 @@ services:
 #      - "443:443"
     depends_on:
       - bc5-db
-    command: bash -c "/var/www/shared/docker/init.sh && apache2-foreground"
+#    command: bash -c "/var/www/html/docker/init.sh && apache2-foreground"
+    command: bash -c "/var/www/html/bin/cake migrations migrate --plugin BaserCore"
+    command: bash -c "/var/www/html/bin/cake migrations seed --plugin BaserCore"
+    command: bash -c "/var/www/html/bin/cake plugin assets symlink"
+    command: bash -c "rm -rf /var/www/html/tmp/cache"
+#
+    command: bash -c "apache2-foreground"
+
+
 
   bc5-smtp:
     container_name: bc5-smtp
-    image: schickling/mailcatcher
+#    image: schickling/mailcatcher
+    image: sj26/mailcatcher
     ports:
       - "1080:1080"
       - "1025:1025"
 
   bc5-pma:
     container_name: bc5-pma
-    image: phpmyadmin/phpmyadmin
+#    image: phpmyadmin/phpmyadmin
+# phpMyAdmin の公式イメージ
+    image: phpmyadmin
     environment:
       - PMA_ARBITRARY=1
       - PMA_HOST=bc5-db
       - PMA_USER=root
       - PMA_PASSWORD=root
+# コンテナ間通信で接続するためにlinksを指定する必要は無くなった
     links:
       - bc5-db
     ports:
@@ -65,7 +79,10 @@ services:
        - phpmyadmin-sessions:/sessions
 
   bc5-pg:
-    image: postgres:10.5
+# M1対応
+#    platform: linux/arm64/v8
+#    image: postgres:10.5
+    image: postgres:10
     container_name: bc5-pg
     ports:
       - 5432:5432
@@ -80,7 +97,11 @@ services:
     user: root
 
   bc5-pga:
-    image: dpage/pgadmin4:3.3
+# M1対応
+#    platform: linux/arm64/v8
+#    platform: linux/amd64
+#    image: dpage/pgadmin4:3.3
+    image: dpage/pgadmin4:3
     container_name: bc5-pga
     ports:
       - 10080:80

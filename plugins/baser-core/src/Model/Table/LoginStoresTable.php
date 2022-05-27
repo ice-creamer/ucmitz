@@ -16,6 +16,9 @@ use Cake\Utility\Security;
 use Cake\ORM\Table;
 use Cake\ORM\Entity;
 use Cake\ORM\RulesChecker;
+use BaserCore\Annotation\NoTodo;
+use BaserCore\Annotation\Checked;
+use BaserCore\Annotation\UnitTest;
 
 /**
  * Class LoginStoresTable
@@ -68,6 +71,9 @@ class LoginStoresTable extends Table
      * @param string $prefix ログイン対象
      * @param int $user_id ユーザID
      * @return EntityInterface
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function addKey(string $prefix, int $user_id): EntityInterface
     {
@@ -100,6 +106,9 @@ class LoginStoresTable extends Table
      * @param string $prefix ログイン対象
      * @param int $user_id ユーザID
      * @return int 削除行数
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function removeKey(string $prefix, int $user_id): int
     {

@@ -47,6 +47,9 @@ class LoginStoresTable extends Table
     /**
      * initialize
      * @param array $config
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function initialize(array $config): void
     {
@@ -58,6 +61,9 @@ class LoginStoresTable extends Table
      * buildRules
      * @param RulesChecker $rules
      * @return RulesChecker
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function buildRules(RulesChecker $rules): RulesChecker
     {
@@ -123,6 +129,9 @@ class LoginStoresTable extends Table
      *
      * @param string $key
      * @return Entity
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function getEnableLoginStore($key): ?Entity
     {
@@ -147,6 +156,9 @@ class LoginStoresTable extends Table
      * @param string $prefix ログイン対象
      * @param int $user_id ユーザID
      * @return EntityInterface|null
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function refresh($prefix, $user_id): EntityInterface
     {

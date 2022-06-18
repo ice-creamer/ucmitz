@@ -105,18 +105,16 @@ class ContentsTable extends AppTable
     /**
      * Implemented Events
      *
-     * beforeDelete の優先順位を SoftDeleteBehaviorより高くする為に調整
-     *
      * @return array
+     * @checked
+     * @noTodo
+     * @unitTest
      */
     public function implementedEvents(): array
     {
         return [
-            // 'Model.beforeFind' => ['callable' => 'beforeFind', 'passParams' => true],
-            // 'Model.afterFind' => ['callable' => 'afterFind', 'passParams' => true],
             'Model.beforeMarshal' => 'beforeMarshal',
             'Model.beforeSave' => ['callable' => 'beforeSave', 'passParams' => true],
-            'Model.afterMarshal' => 'afterMarshal',
             'Model.afterSave' => ['callable' => 'afterSave', 'passParams' => true],
             'Model.afterDelete' => 'afterDelete',
         ];
@@ -325,14 +323,19 @@ class ContentsTable extends AppTable
                 if ($user) $content['author_id'] = $user['id'];
             }
         } else {
+            if (!empty($content['self_publish_begin'])) {
+                $content['self_publish_begin'] = new FrozenTime($content['self_publish_begin']);
+            }
+            if (!empty($content['self_publish_end'])) {
+                $content['self_publish_end'] = new FrozenTime($content['self_publish_end']);
+            }
             if (empty($content['modified_date'])) {
                 $content['modified_date'] = FrozenTime::now();
+            } else {
+                $content['modified_date'] = new FrozenTime($content['modified_date']);
             }
-            if (isset($content['created_date'])) {
+            if (!empty($content['created_date'])) {
                 $content['created_date'] = new FrozenTime($content['created_date']);
-            }
-            if (isset($content['name'])) {
-                $content['name'] = $content['name'];
             }
         }
         // name の 重複チェック＆リネーム
@@ -344,25 +347,6 @@ class ContentsTable extends AppTable
             $content['name'] = $this->getUniqueName($content['name'], $content['parent_id'] ?? null, $contentId);
         }
         return (array) $content;
-    }
-
-    /**
-     * afterMarshal
-     * FrozenTime形式のデータをバリデーション前にstringとして保存
-     * @param  EventInterface $event
-     * @param  EntityInterface $entity
-     * @param  ArrayObject $options
-     * @return void
-     * @checked
-     * @noTodo
-     * @unitTest
-     */
-    public function afterMarshal(EventInterface $event, EntityInterface $entity, ArrayObject $options)
-    {
-        $columns = ConnectionManager::get('default')->getSchemaCollection()->describe($this->getTable())->columns();
-        foreach ($columns as $field) {
-            if ($entity->get($field) instanceof FrozenTime) $entity->set($field, $entity->get($field)->__toString());
-        }
     }
 
     /**

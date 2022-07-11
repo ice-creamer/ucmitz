@@ -7,6 +7,7 @@
  */
 
 use Cake\Cache\Engine\FileEngine;
+use Cake\Log\Engine\FileLog;
 
 return [
     /*
@@ -28,7 +29,7 @@ return [
      *   You should treat it as extremely sensitive data.
      */
     'Security' => [
-        'salt' => env('SECURITY_SALT', '__SALT__'),
+        'salt' => env('SECURITY_SALT', 'af0aa6bb8bad3bf5f9a39e928c645745cc008d67d82ac4edd16ec17e99539725'),
     ],
 
     /*
@@ -49,7 +50,6 @@ return [
 
             'username' => 'root',
             'password' => 'root',
-
             'database' => 'basercms',
             /*
              * If not using the default 'public' schema with the PostgreSQL driver
@@ -61,6 +61,7 @@ return [
              * You can use a DSN string to set the entire configuration
              */
             'url' => env('DATABASE_URL', null),
+            'log' => filter_var(env('SQL_LOG', false), FILTER_VALIDATE_BOOLEAN),
         ],
 
         /*
@@ -113,6 +114,19 @@ return [
     ],
 
     /*
+     * Configures logging options
+     */
+    'Log' => [
+        'update' => [
+            'className' => FileLog::class,
+            'path' => LOGS,
+            'file' => 'update',
+            'scopes' => ['update'],
+            'levels' => ['info', 'error']
+        ]
+    ],
+
+    /*
      * Session configuration.
      *
      * Contains an array of settings to use for session configuration. The
@@ -153,11 +167,20 @@ return [
      */
     'Session' => [
         'defaults' => 'cake',
+        'cookie' => 'BASERCMS',
         /**
          * セッションの有効期限（分）
          * デフォルト：2日間
          */
-        'timeout' => 60 * 24 * 2
+        'timeout' => 60 * 24 * 2,
+        'ini' => [
+            'session.serialize_handler' => 'php',
+            'session.save_path' => TMP . 'sessions',
+            'session.use_cookies' => 1,
+            'session.use_trans_sid' => 0,
+            'session.gc_divisor' => 1,
+            'session.gc_probability' => 1,
+        ]
     ],
 
 ];
